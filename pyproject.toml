@@ -1,6 +1,53 @@
+[project]
+name = "zen-mcp-server"
+version = "0.1.0"
+description = "AI collaboration server with Model Context Protocol support"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Zen MCP Team"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "mcp>=1.0.0",
+    "google-genai>=1.19.0",
+    "openai>=1.0.0",
+    "pydantic>=2.0.0",
+    "redis>=5.0.0",
+    "requests>=2.28.0",  # Added for OpenAI v1/responses API
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.11.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.scripts]
+zen-mcp-server = "server:main"
+
+[tool.setuptools]
+py-modules = ["server", "config"]
+
+[tool.setuptools.packages.find]
+include = ["tools*", "providers*", "prompts*", "utils*"]
+
 [tool.black]
 line-length = 120
-target-version = ['py39', 'py310', 'py311', 'py312', 'py313']
+target-version = ['py310', 'py311', 'py312', 'py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -30,7 +77,7 @@ line_length = 120
 skip_glob = ["venv/*", ".venv/*"]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 120
 
 [tool.ruff.lint]
