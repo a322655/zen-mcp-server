@@ -200,10 +200,14 @@ class OpenAIModelProvider(ModelProvider):
 
         # Determine the API endpoint
         base_url = self.base_url or "https://api.openai.com"
-        # Remove any trailing slashes and /v1 suffix
+        # Remove any trailing slashes
         base_url = base_url.rstrip("/")
+
+        # For OpenAI API, we expect the base URL to not include /v1
+        # If it ends with /v1, remove it to avoid duplication
         if base_url.endswith("/v1"):
-            base_url = base_url[:-3]
+            base_url = base_url[:-3].rstrip("/")
+
         endpoint = f"{base_url}/v1/responses"
 
         try:
