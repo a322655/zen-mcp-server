@@ -27,6 +27,26 @@ __author__ = "Fahad Gilani"
 # Special value "auto" means Claude should pick the best model for each task
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "auto")
 
+# Validate DEFAULT_MODEL and set to "auto" if invalid
+# Only include actually supported models from providers
+VALID_MODELS = [
+    "auto",
+    "flash",
+    "pro",
+    "o3",
+    "o3-mini",
+    "o3-pro",
+    "gemini-2.5-flash-preview-05-20",
+    "gemini-2.5-pro-preview-06-05",
+]
+if DEFAULT_MODEL not in VALID_MODELS:
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.warning(
+        f"Invalid DEFAULT_MODEL '{DEFAULT_MODEL}'. Setting to 'auto'. Valid options: {', '.join(VALID_MODELS)}"
+    )
+    DEFAULT_MODEL = "auto"
 # Auto mode detection - when DEFAULT_MODEL is "auto", Claude picks the model
 IS_AUTO_MODE = DEFAULT_MODEL.lower() == "auto"
 
@@ -37,6 +57,7 @@ MODEL_CAPABILITIES_DESC = {
     "pro": "Deep reasoning + thinking mode (1M context) - Complex problems, architecture, deep analysis",
     "o3": "Strong reasoning (200K context) - Logical problems, code generation, systematic analysis",
     "o3-mini": "Fast O3 variant (200K context) - Balanced performance/speed, moderate complexity",
+    "o3-pro": "Maximum reasoning depth (200K context) - Hardest problems, multi-step reasoning, complex logic puzzles",
     # Full model names also supported
     "gemini-2.5-flash-preview-05-20": "Ultra-fast (1M context) - Quick analysis, simple queries, rapid iterations",
     "gemini-2.5-pro-preview-06-05": (
