@@ -32,6 +32,7 @@ VALID_MODELS = [
     "pro",
     "o3",
     "o3-mini",
+    "o3-pro",
     "gemini-2.5-flash-preview-05-20",
     "gemini-2.5-pro-preview-06-05",
 ]
@@ -54,6 +55,7 @@ MODEL_CAPABILITIES_DESC = {
     "pro": "Deep reasoning + thinking mode (1M context) - Complex problems, architecture, deep analysis",
     "o3": "Strong reasoning (200K context) - Logical problems, code generation, systematic analysis",
     "o3-mini": "Fast O3 variant (200K context) - Balanced performance/speed, moderate complexity",
+    "o3-pro": "Maximum reasoning depth (200K context) - Hardest problems, multi-step reasoning, complex logic puzzles",
     # Full model names also supported
     "gemini-2.5-flash-preview-05-20": "Ultra-fast (1M context) - Quick analysis, simple queries, rapid iterations",
     "gemini-2.5-pro-preview-06-05": "Deep reasoning + thinking mode (1M context) - Complex problems, architecture, deep analysis",
