@@ -12,7 +12,9 @@
       "Bash(grep:*)",
       "Bash(source:*)",
       "Bash(rm:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "Bash(rg:*)",
+      "WebFetch(domain:platform.openai.com)"
     ],
     "deny": []
   }
