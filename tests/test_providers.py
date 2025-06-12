@@ -203,7 +203,7 @@ class TestOpenAIProvider:
         }
         mock_post.return_value = mock_response
 
-        provider = OpenAIModelProvider(api_key="test-key")
+        provider = OpenAIModelProvider(api_key="test-key", organization="test-org")
         
         response = provider.generate_content(
             prompt="Test prompt",
@@ -216,6 +216,12 @@ class TestOpenAIProvider:
         mock_post.assert_called_once()
         call_args = mock_post.call_args
         assert "v1/responses" in call_args[0][0]
+        
+        # Verify headers include organization
+        headers = call_args[1]["headers"]
+        assert headers["Authorization"] == "Bearer test-key"
+        assert headers["Content-Type"] == "application/json"
+        assert headers["OpenAI-Organization"] == "test-org"
         
         # Verify the payload
         payload = call_args[1]["json"]
