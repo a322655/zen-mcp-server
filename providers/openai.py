@@ -94,7 +94,18 @@ class OpenAIModelProvider(ModelProvider):
         # Validate parameters
         self.validate_parameters(model_name, temperature)
 
-        # Prepare messages
+        # Use different API endpoint for o3-pro model
+        if model_name == "o3-pro":
+            return self._generate_with_responses_api(
+                prompt=prompt,
+                model_name=model_name,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_output_tokens=max_output_tokens,
+                **kwargs,
+            )
+
+        # Prepare messages for chat completions API
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
@@ -141,6 +152,101 @@ class OpenAIModelProvider(ModelProvider):
         except Exception as e:
             # Log error and re-raise with more context
             error_msg = f"OpenAI API error for model {model_name}: {str(e)}"
+            logging.error(error_msg)
+            raise RuntimeError(error_msg) from e
+
+    def _generate_with_responses_api(
+        self,
+        prompt: str,
+        model_name: str,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.7,
+        max_output_tokens: Optional[int] = None,
+        **kwargs,
+    ) -> ModelResponse:
+        """Generate content using OpenAI v1/responses API (for o3-pro model)."""
+        import requests
+
+        # Prepare the full prompt
+        full_prompt = prompt
+        if system_prompt:
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+
+        # Prepare API request
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        # Build the request payload
+        payload = {
+            "model": model_name,
+            "prompt": full_prompt,
+            "temperature": temperature,
+        }
+
+        # Add max tokens if specified
+        if max_output_tokens:
+            payload["max_tokens"] = max_output_tokens
+
+        # Add any additional parameters
+        for key, value in kwargs.items():
+            if key in ["top_p", "frequency_penalty", "presence_penalty", "seed", "stop"]:
+                payload[key] = value
+
+        # Determine the API endpoint
+        base_url = self.base_url or "https://api.openai.com/v1"
+        if base_url.endswith("/v1"):
+            base_url = base_url[:-3]  # Remove "/v1" suffix
+        endpoint = f"{base_url}/v1/responses"
+
+        try:
+            # Make API request
+            response = requests.post(endpoint, headers=headers, json=payload)
+            response.raise_for_status()
+
+            data = response.json()
+
+            # Extract content from response
+            # The v1/responses API may have different response structure
+            if "choices" in data and len(data["choices"]) > 0:
+                content = data["choices"][0].get("text", "")
+            elif "text" in data:
+                content = data["text"]
+            else:
+                content = data.get("response", "")
+
+            # Extract usage information if available
+            usage = {}
+            if "usage" in data:
+                usage = {
+                    "input_tokens": data["usage"].get("prompt_tokens", 0),
+                    "output_tokens": data["usage"].get("completion_tokens", 0),
+                    "total_tokens": data["usage"].get("total_tokens", 0),
+                }
+
+            return ModelResponse(
+                content=content,
+                usage=usage,
+                model_name=model_name,
+                friendly_name="OpenAI",
+                provider=ProviderType.OPENAI,
+                metadata={
+                    "model": data.get("model", model_name),
+                    "id": data.get("id", ""),
+                    "created": data.get("created", 0),
+                    "api_endpoint": "v1/responses",
+                },
+            )
+
+        except requests.exceptions.RequestException as e:
+            error_msg = f"OpenAI API error for model {model_name} (v1/responses): {str(e)}"
+            if hasattr(e, "response") and e.response is not None:
+                try:
+                    error_data = e.response.json()
+                    error_msg = f"OpenAI API error for model {model_name} (v1/responses): {error_data}"
+                except Exception:
+                    error_msg = f"OpenAI API error for model {model_name} (v1/responses): {e.response.text}"
             logging.error(error_msg)
             raise RuntimeError(error_msg) from e
 
