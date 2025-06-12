@@ -123,6 +123,10 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
             "Content-Type": "application/json",
         }
 
+        # Add organization header if configured
+        if self.organization:
+            headers["OpenAI-Organization"] = self.organization
+
         # Build the request payload
         payload = {
             "model": model_name,
@@ -140,9 +144,11 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
                 payload[key] = value
 
         # Determine the API endpoint
-        base_url = self.base_url or "https://api.openai.com/v1"
+        base_url = self.base_url or "https://api.openai.com"
+        # Remove any trailing slashes and /v1 suffix
+        base_url = base_url.rstrip("/")
         if base_url.endswith("/v1"):
-            base_url = base_url[:-3]  # Remove "/v1" suffix
+            base_url = base_url[:-3]
         endpoint = f"{base_url}/v1/responses"
 
         try:
@@ -184,14 +190,18 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
                 },
             )
 
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
+            # Handle different types of exceptions
             error_msg = f"OpenAI API error for model {model_name} (v1/responses): {str(e)}"
-            if hasattr(e, "response") and e.response is not None:
-                try:
-                    error_data = e.response.json()
-                    error_msg = f"OpenAI API error for model {model_name} (v1/responses): {error_data}"
-                except Exception:
-                    error_msg = f"OpenAI API error for model {model_name} (v1/responses): {e.response.text}"
+
+            if isinstance(e, requests.exceptions.RequestException):
+                if hasattr(e, "response") and e.response is not None:
+                    try:
+                        error_data = e.response.json()
+                        error_msg = f"OpenAI API error for model {model_name} (v1/responses): {error_data}"
+                    except Exception:
+                        error_msg = f"OpenAI API error for model {model_name} (v1/responses): {e.response.text}"
+
             logging.error(error_msg)
             raise RuntimeError(error_msg) from e
     def get_provider_type(self) -> ProviderType:
