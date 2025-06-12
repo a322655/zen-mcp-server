@@ -210,40 +210,69 @@ class TestOpenAIProvider:
             "model": "o3-pro",
             "id": "test-id",
             "created": 1234567890,
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-                "total_tokens": 30
-            }
+            "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
         }
         mock_post.return_value = mock_response
 
         provider = OpenAIModelProvider(api_key="test-key", organization="test-org")
-        
+
         response = provider.generate_content(
-            prompt="Test prompt",
-            model_name="o3-pro",
-            system_prompt="System prompt",
-            temperature=1.0
+            prompt="Test prompt", model_name="o3-pro", system_prompt="System prompt", temperature=1.0
         )
 
         # Verify the correct endpoint was called
         mock_post.assert_called_once()
         call_args = mock_post.call_args
         assert "v1/responses" in call_args[0][0]
-        
+
         # Verify headers include organization
         headers = call_args[1]["headers"]
         assert headers["Authorization"] == "Bearer test-key"
         assert headers["Content-Type"] == "application/json"
         assert headers["OpenAI-Organization"] == "test-org"
-        
+
         # Verify the payload
         payload = call_args[1]["json"]
         assert payload["model"] == "o3-pro"
         assert payload["prompt"] == "System prompt\n\nTest prompt"
         assert payload["temperature"] == 1.0
-        
+
         # Verify the response
         assert response.content == "Generated content for o3-pro"
         assert response.metadata["api_endpoint"] == "v1/responses"
+
+    @patch("requests.post")
+    def test_o3_pro_handles_various_base_urls(self, mock_post):
+        """Test that o3-pro correctly handles different base URL formats"""
+        # Mock the response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"response": "test", "model": "o3-pro"}
+        mock_post.return_value = mock_response
+
+        test_cases = [
+            # Standard OpenAI URLs
+            ("https://api.openai.com", "https://api.openai.com/v1/responses"),
+            ("https://api.openai.com/", "https://api.openai.com/v1/responses"),
+            ("https://api.openai.com/v1", "https://api.openai.com/v1/responses"),
+            ("https://api.openai.com/v1/", "https://api.openai.com/v1/responses"),
+            # Custom endpoints with /v1 in middle of path
+            ("https://custom.com/api/v1", "https://custom.com/api/v1/responses"),
+            ("https://custom.com/v1/api", "https://custom.com/v1/api/v1/responses"),
+            # Edge cases
+            ("https://example.com///", "https://example.com/v1/responses"),
+            ("https://example.com/v1///", "https://example.com/v1/responses"),
+        ]
+
+        for base_url, expected_endpoint in test_cases:
+            mock_post.reset_mock()
+
+            provider = OpenAIModelProvider(api_key="test-key", base_url=base_url)
+            provider.generate_content(prompt="Test", model_name="o3-pro", temperature=1.0)
+
+            # Verify the correct endpoint was called
+            mock_post.assert_called_once()
+            actual_endpoint = mock_post.call_args[0][0]
+            assert actual_endpoint == expected_endpoint, (
+                f"For base_url={base_url}, expected {expected_endpoint} but got {actual_endpoint}"
+            )
