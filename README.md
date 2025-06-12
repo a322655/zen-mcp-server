@@ -742,6 +742,7 @@ OPENAI_API_KEY=your-openai-key    # Enables O3, O3-mini
 | **`flash`** (Gemini 2.0 Flash) | Google | 1M tokens | Ultra-fast responses | Quick checks, formatting, simple analysis |
 | **`o3`** | OpenAI | 200K tokens | Strong logical reasoning | Debugging logic errors, systematic analysis |
 | **`o3-mini`** | OpenAI | 200K tokens | Balanced speed/quality | Moderate complexity tasks |
+| **`o3-pro`** | OpenAI | 200K tokens | Maximum reasoning depth for hardest problems | Multi-step reasoning, complex logic puzzles, toughest challenges |
 
 **Manual Model Selection:**
 You can specify a default model instead of auto mode:
@@ -936,4 +937,4 @@ Built with the power of **Multi-Model AI** collaboration 🤝
 - [MCP (Model Context Protocol)](https://modelcontextprotocol.com) by Anthropic
 - [Claude Code](https://claude.ai/code) - Your AI coding assistant & orchestrator
 - [Gemini 2.5 Pro & 2.0 Flash](https://ai.google.dev/) - Extended thinking & fast analysis
-- [OpenAI O3](https://openai.com/) - Strong reasoning & general intelligence
+- [OpenAI O3, O3-mini & O3-pro](https://openai.com/) - Strong reasoning & general intelligence
