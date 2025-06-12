@@ -206,11 +206,14 @@ class TestOpenAIProvider:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "response": "Generated content for o3-pro",
+            "output": [
+                {"type": "reasoning", "id": "rs_test"},
+                {"type": "message", "content": [{"type": "output_text", "text": "Generated content for o3-pro"}]},
+            ],
             "model": "o3-pro",
             "id": "test-id",
-            "created": 1234567890,
-            "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
+            "created_at": 1234567890,
+            "usage": {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
         }
         mock_post.return_value = mock_response
 
@@ -234,7 +237,7 @@ class TestOpenAIProvider:
         # Verify the payload
         payload = call_args[1]["json"]
         assert payload["model"] == "o3-pro"
-        assert payload["prompt"] == "System prompt\n\nTest prompt"
+        assert payload["input"] == "System prompt\n\nTest prompt"  # v1/responses uses "input" not "prompt"
         assert payload["temperature"] == 1.0
 
         # Verify the response
@@ -247,7 +250,10 @@ class TestOpenAIProvider:
         # Mock the response
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"response": "test", "model": "o3-pro"}
+        mock_response.json.return_value = {
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "test"}]}],
+            "model": "o3-pro",
+        }
         mock_post.return_value = mock_response
 
         test_cases = [
@@ -276,3 +282,162 @@ class TestOpenAIProvider:
             assert actual_endpoint == expected_endpoint, (
                 f"For base_url={base_url}, expected {expected_endpoint} but got {actual_endpoint}"
             )
+
+    @patch("requests.post")
+    def test_o3_pro_filters_empty_kwargs(self, mock_post):
+        """Test that o3-pro filters out empty keys and unknown parameters from kwargs"""
+        # Mock the response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "Generated content"}]}],
+            "model": "o3-pro",
+            "id": "test-id",
+            "created_at": 1234567890,
+        }
+        mock_post.return_value = mock_response
+
+        provider = OpenAIModelProvider(api_key="test-key")
+
+        # Call with various problematic kwargs
+        response = provider.generate_content(
+            prompt="Test prompt",
+            model_name="o3-pro",
+            temperature=1.0,  # o3-pro only supports temperature=1.0
+            # These should be filtered out
+            thinking_mode="high",  # Not supported by OpenAI
+            **{"": "empty_key_value"},  # Empty string key
+            some_unknown_param="should_be_ignored",
+        )
+
+        # Verify the API was called
+        mock_post.assert_called_once()
+        payload = mock_post.call_args[1]["json"]
+
+        # Verify only valid parameters are in payload
+        assert "model" in payload
+        assert "input" in payload  # v1/responses uses "input" not "prompt"
+        assert "temperature" in payload
+        assert payload["temperature"] == 1.0
+
+        # Verify problematic parameters were filtered out
+        assert "" not in payload  # Empty key should be filtered
+        assert "thinking_mode" not in payload  # Unknown parameter
+        assert "some_unknown_param" not in payload  # Unknown parameter
+
+        # Verify response is correct
+        assert response.content == "Generated content"
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})
+    @patch("requests.post")
+    def test_o3_pro_direct_api_call(self, mock_post):
+        """Test that o3-pro uses direct HTTP requests instead of OpenAI client"""
+        # Mock the HTTP response
+        mock_http_response = Mock()
+        mock_http_response.status_code = 200
+        mock_http_response.json.return_value = {
+            "output": [
+                {"type": "reasoning", "id": "rs_test"},
+                {
+                    "type": "message",
+                    "content": [{"type": "output_text", "text": "Test response from o3-pro"}],
+                },
+            ],
+            "usage": {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
+            "model": "o3-pro",
+            "id": "resp_test",
+            "created_at": 1234567890,
+        }
+        mock_post.return_value = mock_http_response
+
+        # Create provider
+        provider = OpenAIModelProvider(api_key="test-key")
+
+        # Test generate_content
+        response = provider.generate_content(
+            prompt="Test prompt",
+            model_name="o3-pro",
+            system_prompt="System prompt",
+            temperature=1.0,
+            max_output_tokens=100,
+        )
+
+        # Verify HTTP request was made
+        mock_post.assert_called_once()
+        call_args = mock_post.call_args
+        assert "v1/responses" in call_args[0][0]
+
+        # Verify request payload
+        payload = call_args[1]["json"]
+        assert payload["model"] == "o3-pro"
+        assert payload["input"] == "System prompt\n\nTest prompt"
+        assert payload["temperature"] == 1.0
+        assert payload["max_output_tokens"] == 100
+
+        # Verify response content
+        assert response.content == "Test response from o3-pro"
+        assert response.model_name == "o3-pro"
+        assert response.provider == ProviderType.OPENAI
+        assert response.usage["input_tokens"] == 10
+        assert response.usage["output_tokens"] == 20
+
+    @patch("requests.post")
+    def test_o3_pro_error_scenarios(self, mock_post):
+        """Test o3-pro error handling for various scenarios"""
+        provider = OpenAIModelProvider(api_key="test-key")
+
+        # Test 1: Empty parameter should be filtered (the original issue fix)
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "Success"}]}],
+            "model": "o3-pro",
+        }
+        mock_post.return_value = mock_response
+
+        # This should work because empty keys are filtered
+        response = provider.generate_content(
+            prompt="Test",
+            model_name="o3-pro",
+            temperature=1.0,
+            **{"": "value"},  # Empty key that should be filtered
+        )
+
+        # Verify the request was made successfully
+        assert response.content == "Success"
+
+        # Verify the empty key was not sent
+        call_args = mock_post.call_args
+        payload = call_args[1]["json"]
+        assert "" not in payload
+
+        # Test 2: Invalid parameter error
+        mock_response.json.return_value = {
+            "error": {
+                "message": "Unknown parameter: 'invalid_param'.",
+                "type": "invalid_request_error",
+                "param": "invalid_param",
+                "code": "unknown_parameter",
+            }
+        }
+
+        # This should not raise an error because we filter unknown parameters
+        mock_post.reset_mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "Success"}]}],
+            "model": "o3-pro",
+        }
+
+        response = provider.generate_content(
+            prompt="Test",
+            model_name="o3-pro",
+            temperature=1.0,
+            invalid_param="should_be_filtered",
+        )
+
+        # Verify the invalid parameter was not sent
+        call_args = mock_post.call_args
+        payload = call_args[1]["json"]
+        assert "invalid_param" not in payload
+        assert response.content == "Success"
