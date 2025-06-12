@@ -195,3 +195,46 @@ class TestOpenAIProvider:
 
         assert not provider.supports_thinking_mode("o3")
         assert not provider.supports_thinking_mode("o3-mini")
+
+    @patch("requests.post")
+    def test_o3_pro_uses_responses_api(self, mock_post):
+        """Test that o3-pro model uses v1/responses API endpoint"""
+        # Mock the response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "response": "Generated content for o3-pro",
+            "model": "o3-pro",
+            "id": "test-id",
+            "created": 1234567890,
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 20,
+                "total_tokens": 30
+            }
+        }
+        mock_post.return_value = mock_response
+
+        provider = OpenAIModelProvider(api_key="test-key")
+        
+        response = provider.generate_content(
+            prompt="Test prompt",
+            model_name="o3-pro",
+            system_prompt="System prompt",
+            temperature=1.0
+        )
+
+        # Verify the correct endpoint was called
+        mock_post.assert_called_once()
+        call_args = mock_post.call_args
+        assert "v1/responses" in call_args[0][0]
+        
+        # Verify the payload
+        payload = call_args[1]["json"]
+        assert payload["model"] == "o3-pro"
+        assert payload["prompt"] == "System prompt\n\nTest prompt"
+        assert payload["temperature"] == 1.0
+        
+        # Verify the response
+        assert response.content == "Generated content for o3-pro"
+        assert response.metadata["api_endpoint"] == "v1/responses"
