@@ -1,21 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "mcp__gemini__review_code",
-      "mcp__gemini__chat",
-      "mcp__gemini__analyze",
-      "Bash(find:*)",
-      "mcp__gemini__review_changes",
-      "Bash(python test_resolve.py:*)",
-      "Bash(python3:*)",
       "Bash(cat:*)",
-      "Bash(grep:*)",
-      "Bash(source:*)",
-      "Bash(rm:*)",
       "Bash(gh pr view:*)",
       "Bash(rg:*)",
-      "WebFetch(domain:platform.openai.com)"
+      "Bash(fd:*)",
+      "WebFetch(domain:platform.openai.com)",
+      "mcp__zen__chat",
+      "mcp__zen__thinkdeep"
     ],
-    "deny": []
+    "deny": [
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(rm:*)"
+    ]
   }
 }
