@@ -235,7 +235,8 @@ class TestOpenAIProvider:
         payload = call_args[1]["json"]
         assert payload["model"] == "o3-pro"
         assert payload["input"] == "System prompt\n\nTest prompt"  # v1/responses uses "input" not "prompt"
-        assert payload["temperature"] == 1.0
+        # o3-pro doesn't support temperature parameter
+        assert "temperature" not in payload
 
         # Verify the response
         assert response.content == "Generated content for o3-pro"
@@ -318,8 +319,8 @@ class TestOpenAIProvider:
         # Verify only valid parameters are in payload
         assert "model" in payload
         assert "input" in payload  # v1/responses uses "input" not "prompt"
-        assert "temperature" in payload
-        assert payload["temperature"] == 1.0
+        # o3-pro doesn't support temperature parameter
+        assert "temperature" not in payload
 
         # Verify problematic parameters were filtered out
         assert "" not in payload  # Empty key should be filtered
@@ -372,7 +373,8 @@ class TestOpenAIProvider:
         payload = call_args[1]["json"]
         assert payload["model"] == "o3-pro"
         assert payload["input"] == "System prompt\n\nTest prompt"
-        assert payload["temperature"] == 1.0
+        # o3-pro doesn't support temperature parameter
+        assert "temperature" not in payload
         assert payload["max_output_tokens"] == 100
 
         # Verify response content
@@ -442,3 +444,104 @@ class TestOpenAIProvider:
         payload = call_args[1]["json"]
         assert "invalid_param" not in payload
         assert response.content == "Success"
+
+    @patch("providers.openai_compatible.OpenAI")
+    def test_o_series_models_sampling_parameters(self, mock_openai_class):
+        """Test that o-series models (o3, o3-mini) don't include sampling parameters"""
+        # Mock the OpenAI client
+        mock_client = Mock()
+        mock_openai_class.return_value = mock_client
+        
+        # Mock the chat completion response
+        mock_completion = Mock()
+        mock_completion.choices = [Mock(message=Mock(content="Test response"))]
+        mock_completion.usage = Mock(prompt_tokens=10, completion_tokens=20, total_tokens=30)
+        mock_completion.model = "o3"
+        mock_completion.id = "test-id"
+        mock_completion.created = 123456789
+        mock_completion.choices[0].finish_reason = "stop"
+        
+        mock_client.chat.completions.create.return_value = mock_completion
+        
+        provider = OpenAIModelProvider(api_key="test-key")
+        
+        # Test o3 model
+        response = provider.generate_content(
+            prompt="Test",
+            model_name="o3",
+            temperature=0.5,  # Should be ignored
+            top_p=0.9,       # Should be filtered
+            frequency_penalty=0.5,  # Should be filtered
+            presence_penalty=0.5,   # Should be filtered
+            seed=42,         # Should pass through
+        )
+        
+        # Check the call arguments
+        call_args = mock_client.chat.completions.create.call_args
+        kwargs = call_args[1]
+        
+        # Verify temperature is forced to 1.0
+        assert kwargs["temperature"] == 1.0
+        # Verify sampling parameters are filtered
+        assert "top_p" not in kwargs
+        assert "frequency_penalty" not in kwargs
+        assert "presence_penalty" not in kwargs
+        # Verify other parameters pass through
+        assert kwargs.get("seed") == 42
+        
+        # Test o3-mini model
+        mock_client.chat.completions.create.reset_mock()
+        mock_completion.model = "o3-mini"
+        
+        response = provider.generate_content(
+            prompt="Test",
+            model_name="o3-mini",
+            temperature=0.7,
+            top_p=0.95,
+            frequency_penalty=0.3,
+            presence_penalty=0.2,
+        )
+        
+        call_args = mock_client.chat.completions.create.call_args
+        kwargs = call_args[1]
+        
+        # Verify temperature is forced to 1.0
+        assert kwargs["temperature"] == 1.0
+        # Verify sampling parameters are filtered
+        assert "top_p" not in kwargs
+        assert "frequency_penalty" not in kwargs
+        assert "presence_penalty" not in kwargs
+
+    @patch("requests.post")
+    def test_o3_pro_capabilities(self, mock_post):
+        """Test getting O3-pro model capabilities"""
+        provider = OpenAIModelProvider(api_key="test-key")
+        
+        capabilities = provider.get_capabilities("o3-pro")
+        
+        assert capabilities.provider == ProviderType.OPENAI
+        assert capabilities.model_name == "o3-pro"
+        assert capabilities.context_window == 200_000
+        assert not capabilities.supports_extended_thinking
+        assert capabilities.supports_system_prompts
+        assert capabilities.supports_streaming
+        assert capabilities.supports_function_calling
+        
+        # Check temperature constraint
+        from providers.base import FixedTemperatureConstraint
+        assert isinstance(capabilities.temperature_constraint, FixedTemperatureConstraint)
+        assert capabilities.temperature_constraint.value == 1.0
+        
+    def test_validate_o_series_models(self):
+        """Test model validation for all o-series models"""
+        provider = OpenAIModelProvider(api_key="test-key")
+        
+        # All o-series models should be valid
+        assert provider.validate_model_name("o3")
+        assert provider.validate_model_name("o3-mini")
+        assert provider.validate_model_name("o3-pro")
+        
+        # Invalid models
+        assert not provider.validate_model_name("o3-max")
+        assert not provider.validate_model_name("gpt-4")
+        assert not provider.validate_model_name("invalid-model")
