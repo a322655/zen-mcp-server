@@ -26,13 +26,16 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
             "supports_extended_thinking": False,
         },
         "o3-pro": {
-            "max_tokens": 200_000,  # 200K tokens
+            "context_window": 200_000,  # 200K tokens
             "supports_extended_thinking": False,
         },
     }
 
     # Valid additional parameters for OpenAI API
     VALID_API_PARAMS = ["top_p", "frequency_penalty", "presence_penalty", "seed", "stop"]
+    
+    # O-series models that don't support sampling parameters
+    O_SERIES_MODELS = {"o3", "o3-mini", "o3-pro"}
 
     def __init__(self, api_key: str, **kwargs):
         """Initialize OpenAI provider with API key."""
@@ -91,6 +94,24 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
                 **kwargs,
             )
 
+        # Filter out unsupported parameters for O-series models
+        if model_name in self.O_SERIES_MODELS:
+            # Remove sampling parameters that O-series models don't support
+            filtered_kwargs = {
+                k: v for k, v in kwargs.items() 
+                if k not in ["top_p", "frequency_penalty", "presence_penalty"]
+            }
+            # O-series models only support temperature=1.0, so we ignore the temperature parameter
+            # The parent class will handle this through validate_parameters
+            return super().generate_content(
+                prompt=prompt,
+                model_name=model_name,
+                system_prompt=system_prompt,
+                temperature=1.0,  # O-series models only support temperature=1.0
+                max_output_tokens=max_output_tokens,
+                **filtered_kwargs,
+            )
+        
         # Use the parent class implementation for other models
         return super().generate_content(
             prompt=prompt,
@@ -135,8 +156,12 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
         payload = {
             "model": model_name,
             "input": full_prompt,
-            "temperature": temperature,
         }
+        
+        # O-series models don't support sampling parameters
+        # (temperature, top_p, presence_penalty, frequency_penalty)
+        if model_name not in self.O_SERIES_MODELS:
+            payload["temperature"] = temperature
 
         # Add max output tokens if specified
         # Note: v1/responses uses "max_output_tokens" not "max_tokens"
@@ -147,6 +172,10 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
         for key, value in kwargs.items():
             # Skip empty keys and only include known OpenAI parameters
             if key and key in self.VALID_API_PARAMS:
+                # Skip sampling parameters for O-series models
+                if model_name in self.O_SERIES_MODELS and key in ["top_p", "frequency_penalty", "presence_penalty"]:
+                    logging.debug(f"Skipping unsupported parameter '{key}' for O-series model {model_name}")
+                    continue
                 payload[key] = value
             elif not key:
                 # Log empty key detection
