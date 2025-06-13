@@ -241,9 +241,13 @@ class TestOpenAIProvider:
         assert response.content == "Generated content for o3-pro"
         assert response.metadata["api_endpoint"] == "v1/responses"
 
+    @patch("providers.openai_compatible.OpenAICompatibleProvider._validate_base_url")
     @patch("requests.post")
-    def test_o3_pro_handles_various_base_urls(self, mock_post):
+    def test_o3_pro_handles_various_base_urls(self, mock_post, mock_validate):
         """Test that o3-pro correctly handles different base URL formats"""
+        # Skip URL validation for test URLs
+        mock_validate.return_value = None
+
         # Mock the response
         mock_response = Mock()
         mock_response.status_code = 200
