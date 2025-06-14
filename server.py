@@ -604,7 +604,7 @@ async def handle_get_version() -> list[TextContent]:
     if ModelProviderRegistry.get_provider(ProviderType.GOOGLE):
         configured_providers.append("Gemini (flash, pro)")
     if ModelProviderRegistry.get_provider(ProviderType.OPENAI):
-        configured_providers.append("OpenAI (o3, o3-mini)")
+        configured_providers.append("OpenAI (o3, o4-mini)")
     if ModelProviderRegistry.get_provider(ProviderType.OPENROUTER):
         configured_providers.append("OpenRouter (configured via conf/custom_models.json)")
 
