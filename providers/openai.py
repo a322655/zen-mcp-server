@@ -21,7 +21,7 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
             "context_window": 200_000,  # 200K tokens
             "supports_extended_thinking": False,
         },
-        "o3-mini": {
+        "o4-mini": {
             "context_window": 200_000,  # 200K tokens
             "supports_extended_thinking": False,
         },
@@ -35,7 +35,7 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
     VALID_API_PARAMS = ["top_p", "frequency_penalty", "presence_penalty", "seed", "stop"]
     
     # O-series models that don't support sampling parameters
-    O_SERIES_MODELS = {"o3", "o3-mini", "o3-pro"}
+    O_SERIES_MODELS = {"o3", "o4-mini", "o3-pro"}
 
     def __init__(self, api_key: str, **kwargs):
         """Initialize OpenAI provider with API key."""
@@ -51,7 +51,7 @@ class OpenAIModelProvider(OpenAICompatibleProvider):
         config = self.SUPPORTED_MODELS[model_name]
 
         # Define temperature constraints per model
-        if model_name in ["o3", "o3-mini", "o3-pro"]:
+        if model_name in ["o3", "o4-mini", "o3-pro"]:
             # O3 models only support temperature=1.0
             temp_constraint = FixedTemperatureConstraint(1.0)
         else:

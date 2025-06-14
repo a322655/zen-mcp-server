@@ -105,7 +105,7 @@ class ModelProviderRegistry:
         3. OPENROUTER - Catch-all for cloud models via unified API
 
         Args:
-            model_name: Name of the model (e.g., "gemini-2.5-flash-preview-05-20", "o3-mini")
+            model_name: Name of the model (e.g., "gemini-2.5-flash-preview-05-20", "o4-mini")
 
         Returns:
             ModelProvider instance that supports this model
@@ -228,7 +228,7 @@ class ModelProviderRegistry:
         elif tool_category == ToolModelCategory.FAST_RESPONSE:
             # Prefer fast, cost-efficient models
             if openai_available:
-                return "o3-mini"  # Fast and efficient
+                return "o4-mini"  # Fast and efficient
             elif gemini_available:
                 return "flash"  # Gemini Flash for speed
             else:
@@ -237,7 +237,7 @@ class ModelProviderRegistry:
 
         # BALANCED or no category specified - use existing balanced logic
         if openai_available:
-            return "o3-mini"  # Balanced performance/cost
+            return "o4-mini"  # Balanced performance/cost
         elif gemini_available:
             return "gemini-2.5-flash-preview-05-20"  # Fast and efficient
         else:
