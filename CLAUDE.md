@@ -28,47 +28,47 @@ docker compose restart
 **Manual Setup:**
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (uv will use pyproject.toml)
+uv sync
 
 # Set environment variables
 export GEMINI_API_KEY=your-gemini-api-key
 export OPENAI_API_KEY=your-openai-api-key  # Optional
 
 # Run server
-python server.py
+uv run python server.py
 ```
 
 ### Testing
 
 ```bash
 # Run unit tests (no API key required)
-python -m pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run with coverage
-python -m pytest tests/ --cov=. --cov-report=html
+uv run pytest tests/ --cov=. --cov-report=html
 
 # Run simulation tests (requires API keys)
-python communication_simulator_test.py
+uv run python communication_simulator_test.py
 
 # Run specific simulation tests
-python communication_simulator_test.py --tests basic_conversation
+uv run python communication_simulator_test.py --tests basic_conversation
 
 # List available simulation tests
-python communication_simulator_test.py --list-tests
+uv run python communication_simulator_test.py --list-tests
 ```
 
 ### Linting and Code Quality
 
 ```bash
 # Format code with Black
-black .
+uv run black .
 
 # Run linting
-ruff check .
+uv run ruff check .
 
 # Type checking
-mypy .
+uv run mypy .
 ```
 
 ## Architecture Overview
@@ -138,3 +138,36 @@ mypy .
 - Edit prompts in `prompts/tool_prompts.py`
 - Adjust temperature settings in tool implementation
 - Override `get_system_prompt()` for tool-specific changes
+
+## Git Workflow for Upstream Synchronization
+
+### Daily Sync Process
+
+When synchronizing with upstream, use a safe branch-based approach:
+
+1. **Create integration branch from upstream:**
+
+   ```bash
+   git fetch upstream
+   git switch -c integration-$(date +%Y-%m-%d) upstream/main
+   ```
+
+2. **Cherry-pick your commits:**
+
+   ```bash
+   git cherry-pick <commit1> <commit2> <commit3>
+   ```
+
+3. **Test and merge back:**
+
+   ```bash
+   # Run tests
+   uv run pytest tests/
+
+   # Merge to your main branch
+   git switch main
+   git merge --ff-only integration-$(date +%Y-%m-%d)
+
+   # Clean up
+   git branch -d integration-$(date +%Y-%m-%d)
+   ```
