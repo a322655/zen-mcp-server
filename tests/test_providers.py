@@ -176,10 +176,10 @@ class TestOpenAIProvider:
         """Test getting O3 model capabilities"""
         provider = OpenAIModelProvider(api_key="test-key")
 
-        capabilities = provider.get_capabilities("o3-mini")
+        capabilities = provider.get_capabilities("o4-mini")
 
         assert capabilities.provider == ProviderType.OPENAI
-        assert capabilities.model_name == "o3-mini"
+        assert capabilities.model_name == "o4-mini"
         assert capabilities.context_window == 200_000
         assert not capabilities.supports_extended_thinking
 
@@ -188,7 +188,7 @@ class TestOpenAIProvider:
         provider = OpenAIModelProvider(api_key="test-key")
 
         assert provider.validate_model_name("o3")
-        assert provider.validate_model_name("o3-mini")
+        assert provider.validate_model_name("o4-mini")
         assert not provider.validate_model_name("gpt-4o")
         assert not provider.validate_model_name("invalid-model")
 
@@ -197,7 +197,7 @@ class TestOpenAIProvider:
         provider = OpenAIModelProvider(api_key="test-key")
 
         assert not provider.supports_thinking_mode("o3")
-        assert not provider.supports_thinking_mode("o3-mini")
+        assert not provider.supports_thinking_mode("o4-mini")
 
     @patch("requests.post")
     def test_o3_pro_uses_responses_api(self, mock_post):
@@ -450,7 +450,7 @@ class TestOpenAIProvider:
 
     @patch("providers.openai_compatible.OpenAI")
     def test_o_series_models_sampling_parameters(self, mock_openai_class):
-        """Test that o-series models (o3, o3-mini) don't include sampling parameters"""
+        """Test that o-series models (o3, o4-mini) don't include sampling parameters"""
         # Mock the OpenAI client
         mock_client = Mock()
         mock_openai_class.return_value = mock_client
@@ -492,13 +492,13 @@ class TestOpenAIProvider:
         # Verify other parameters pass through
         assert kwargs.get("seed") == 42
         
-        # Test o3-mini model
+        # Test o4-mini model
         mock_client.chat.completions.create.reset_mock()
-        mock_completion.model = "o3-mini"
+        mock_completion.model = "o4-mini"
         
         response = provider.generate_content(
             prompt="Test",
-            model_name="o3-mini",
+            model_name="o4-mini",
             temperature=0.7,
             top_p=0.95,
             frequency_penalty=0.3,
@@ -541,7 +541,7 @@ class TestOpenAIProvider:
         
         # All o-series models should be valid
         assert provider.validate_model_name("o3")
-        assert provider.validate_model_name("o3-mini")
+        assert provider.validate_model_name("o4-mini")
         assert provider.validate_model_name("o3-pro")
         
         # Invalid models
