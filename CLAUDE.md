@@ -86,7 +86,7 @@ mypy .
 - Modular AI provider architecture supporting multiple models
 - `base.py`: Abstract base class defining provider interface
 - `gemini.py`: Google Gemini integration (Pro, Flash)
-- `openai.py`: OpenAI integration (O3, O3-mini, O3-pro)
+- `openai.py`: OpenAI integration (O3, O4-mini, O3-pro)
 - `registry.py`: Dynamic provider registration and model selection
 
 **Tool System (`tools/`)**:

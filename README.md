@@ -533,7 +533,7 @@ DEFAULT_MODEL=auto  # Claude picks the best model automatically
 
 # API Keys (at least one required)
 GEMINI_API_KEY=your-gemini-key    # Enables Gemini Pro & Flash
-OPENAI_API_KEY=your-openai-key    # Enables O3, O3-mini
+OPENAI_API_KEY=your-openai-key    # Enables O3, O4-mini
 ```
 
 **Available Models:**
@@ -541,7 +541,7 @@ OPENAI_API_KEY=your-openai-key    # Enables O3, O3-mini
 - **`pro`** (Gemini 2.5 Pro): Extended thinking, deep analysis
 - **`flash`** (Gemini 2.0 Flash): Ultra-fast responses
 - **`o3`**: Strong logical reasoning
-- **`o3-mini`**: Balanced speed/quality
+- **`o4-mini`**: Next-gen mini model, faster than o3
 - **Custom models**: via OpenRouter or local APIs (Ollama, vLLM, etc.)
 
 **Supported Models & When Claude Uses Them:**
@@ -551,7 +551,7 @@ OPENAI_API_KEY=your-openai-key    # Enables O3, O3-mini
 | **`pro`** (Gemini 2.5 Pro)     | Google     | 1M tokens   | Extended thinking (up to 32K tokens), deep analysis | Complex architecture, security reviews, deep debugging           |
 | **`flash`** (Gemini 2.0 Flash) | Google     | 1M tokens   | Ultra-fast responses                                | Quick checks, formatting, simple analysis                        |
 | **`o3`**                       | OpenAI     | 200K tokens | Strong logical reasoning                            | Debugging logic errors, systematic analysis                      |
-| **`o3-mini`**                  | OpenAI     | 200K tokens | Balanced speed/quality                              | Moderate complexity tasks                                        |
+| **`o4-mini`**                  | OpenAI     | 200K tokens | Next-gen mini model, faster than o3                 | Moderate complexity tasks, balanced performance                  |
 | **`o3-pro`**                   | OpenAI     | 200K tokens | Maximum reasoning depth for hardest problems        | Multi-step reasoning, complex logic puzzles, toughest challenges |
 | **Any model**                  | OpenRouter | Varies      | Access to GPT-4, Claude, Llama, etc.                | User-specified or based on task requirements                     |
 
@@ -571,7 +571,7 @@ Regardless of your default setting, you can specify models per request:
 - "Use **pro** for deep security analysis of auth.py"
 - "Use **flash** to quickly format this code"
 - "Use **o3** to debug this logic error"
-- "Review with **o3-mini** for balanced analysis"
+- "Review with **o4-mini** for fast and efficient analysis"
 
 **Model Capabilities:**
 
