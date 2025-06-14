@@ -98,23 +98,23 @@ class O3ModelSelectionTest(BaseSimulatorTest):
 
             self.logger.info("  ✅ O3 model call completed")
 
-            # Test 2: Explicit O3-mini model selection
-            self.logger.info("  2: Testing explicit O3-mini model selection")
+            # Test 2: Explicit O4-mini model selection
+            self.logger.info("  2: Testing explicit O4-mini model selection")
 
             response2, _ = self.call_mcp_tool(
                 "chat",
                 {
                     "prompt": "Simple test: What is 3 + 3? Just give a brief answer.",
-                    "model": "o3-mini",
+                    "model": "o4-mini",
                     "temperature": 1.0,  # O3-mini only supports default temperature of 1.0
                 },
             )
 
             if not response2:
-                self.logger.error("  ❌ O3-mini model test failed")
+                self.logger.error("  ❌ O4-mini model test failed")
                 return False
 
-            self.logger.info("  ✅ O3-mini model call completed")
+            self.logger.info("  ✅ O4-mini model call completed")
 
             # Test 3: Explicit O3-pro model selection
             self.logger.info("  3: Testing explicit O3-pro model selection")
@@ -190,7 +190,7 @@ def multiply(x, y):
             openai_api_called = len(openai_api_logs) >= 4  # Should see 4 OpenAI API calls
             openai_model_usage = len(openai_model_logs) >= 4  # Should see 4 model usage logs
             openai_responses_received = len(openai_response_logs) >= 4  # Should see 4 responses
-            chat_calls_to_openai = len(chat_openai_logs) >= 3  # Should see 3 chat calls (o3 + o3-mini + o3-pro)
+            chat_calls_to_openai = len(chat_openai_logs) >= 3  # Should see 3 chat calls (o3 + o4-mini + o3-pro)
             codereview_calls_to_openai = len(codereview_openai_logs) >= 1  # Should see 1 codereview call
 
             self.logger.info(f"   OpenAI API call logs: {len(openai_api_logs)}")
@@ -263,23 +263,23 @@ def multiply(x, y):
 
             self.logger.info("  ✅ O3 model call via OpenRouter completed")
 
-            # Test 2: O3-mini model via OpenRouter
-            self.logger.info("  2: Testing O3-mini model via OpenRouter")
+            # Test 2: O4-mini model via OpenRouter
+            self.logger.info("  2: Testing O4-mini model via OpenRouter")
 
             response2, _ = self.call_mcp_tool(
                 "chat",
                 {
                     "prompt": "Simple test: What is 3 + 3? Just give a brief answer.",
-                    "model": "o3-mini",
+                    "model": "o4-mini",
                     "temperature": 1.0,
                 },
             )
 
             if not response2:
-                self.logger.error("  ❌ O3-mini model test via OpenRouter failed")
+                self.logger.error("  ❌ O4-mini model test via OpenRouter failed")
                 return False
 
-            self.logger.info("  ✅ O3-mini model call via OpenRouter completed")
+            self.logger.info("  ✅ O4-mini model call via OpenRouter completed")
 
             # Test 3: O3-pro model via OpenRouter
             self.logger.info("  3: Testing O3-pro model via OpenRouter")

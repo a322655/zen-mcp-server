@@ -92,13 +92,13 @@ class TestModelSelection:
             assert model == "pro"
 
     def test_fast_response_with_openai(self):
-        """Test FAST_RESPONSE prefers o3-mini when OpenAI is available."""
+        """Test FAST_RESPONSE prefers o4-mini when OpenAI is available."""
         with patch.object(ModelProviderRegistry, "get_provider") as mock_get_provider:
             # Mock OpenAI available
             mock_get_provider.side_effect = lambda ptype: MagicMock() if ptype == ProviderType.OPENAI else None
 
             model = ModelProviderRegistry.get_preferred_fallback_model(ToolModelCategory.FAST_RESPONSE)
-            assert model == "o3-mini"
+            assert model == "o4-mini"
 
     def test_fast_response_with_gemini_only(self):
         """Test FAST_RESPONSE prefers flash when only Gemini is available."""
@@ -116,7 +116,7 @@ class TestModelSelection:
             mock_get_provider.side_effect = lambda ptype: MagicMock() if ptype == ProviderType.OPENAI else None
 
             model = ModelProviderRegistry.get_preferred_fallback_model(ToolModelCategory.BALANCED)
-            assert model == "o3-mini"  # Balanced prefers o3-mini when OpenAI available
+            assert model == "o4-mini"  # Balanced prefers o4-mini when OpenAI available
 
     def test_no_category_uses_balanced_logic(self):
         """Test that no category specified uses balanced logic."""
@@ -189,7 +189,7 @@ class TestAutoModeErrorMessages:
 
                     assert len(result) == 1
                     assert "Model parameter is required in auto mode" in result[0].text
-                    assert "Suggested model for chat: 'o3-mini'" in result[0].text
+                    assert "Suggested model for chat: 'o4-mini'" in result[0].text
                     assert "(category: fast_response)" in result[0].text
 
 
